@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aesthetic Photobooth</title>
+  <style>
+    body {
+      background-image: url('https://i.imgur.com/qgzV6tF.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-position: center;
+      background-color: #f5e9d3;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #7e4f2a;
+      background-color: rgba(255, 248, 220, 0.8);
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-family: 'Georgia', serif;
+      margin-bottom: 20px;
+    }
+
+    #cameraContainer {
+      position: relative;
+      border: 8px double #a47148;
+      border-radius: 20px;
+      background-color: rgba(255, 239, 213, 0.6);
+      padding: 10px;
+    }
+
+    video {
+      border-radius: 16px;
+      width: 320px;
+      height: 240px;
+      object-fit: cover;
+      filter: sepia(0.25);
+    }
+
+    #countdown {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      font-weight: bold;
+      color: #6f422b;
+      animation: pop 0.5s ease-in-out;
+      z-index: 10;
+    }
+
+    #flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: white;
+      opacity: 0;
+      z-index: 5;
+    }
+
+    .controls, .filters {
+      margin: 10px;
+      background-color: rgba(255, 255, 240, 0.85);
+      padding: 15px;
+      border-radius: 15px;
+      border: 2px solid #bfa890;
+    }
+
+    button, select, input {
+      margin: 5px;
+      padding: 10px;
+      background-color: #e2c8a4;
+      color: #4b2e19;
+      border: 2px solid #7e5c3b;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .strip {
+      margin-top: 20px;
+      background: rgba(250, 240, 230, 0.9);
+      padding: 20px;
+      border-radius: 20px;
+      border: 6px dashed #c9a77d;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+
+    .strip img {
+      width: 320px;
+      border-radius: 10px;
+      border: 3px solid #b98e68;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    .footer {
+      font-size: 12px;
+      color: #5c4330;
+      margin-top: 10px;
+      text-align: center;
+      font-style: italic;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+    <h1>💖 Aesthetic Photobooth 💖</h1>
+  
+    <div id="cameraContainer">
+      <video id="video" autoplay playsinline></video>
+      <div id="countdown"></div>
+      <div id="flash"></div>
+    </div>
+  
+    <div class="controls">
+      <label>📷 Select Camera: <select id="cameraSelect"></select></label><br>
+      <label>🎨 Frame Style:
+        <select id="frameSelect">
+          <option value="1">Pastel Pink</option>
+          <option value="2">Polaroid White</option>
+          <option value="3">Sparkle Gold</option>
+          <option value="4">Mint Green</option>
+          <option value="5">Lavender Mist</option>
+          <option value="6">Dreamy Blue</option>
+          <option value="7">Vintage Sepia</option>
+          <option value="8">Kawaii Border</option>
+          <option value="9">Neon Pink Glow</option>
+          <option value="10">Rainbow Doodle</option>
+        </select>
+      </label><br>
+      <label>⏱ Timer (sec): <input id="timerInput" type="number" min="0" max="10" value="0"/></label>
+      <label>📸 Number of Photos: <input id="countInput" type="number" min="1" max="10" value="1"/></label><br>
+      <button onclick="startPhotoSession()">Start Session</button>
+      <button onclick="downloadStrip()">Download Strip</button>
+    </div>
+  
+    <div class="filters">
+      <label>💫 Face Filter:
+        <select id="faceFilter" onchange="updateFilterPreview()">
+          <option value="none">None</option>
+          <option value="grayscale">Grayscale</option>
+          <option value="sepia">Sepia</option>
+          <option value="invert">Invert</option>
+          <option value="blur">Blur</option>
+          <option value="brightness">Brighten</option>
+          <option value="contrast">High Contrast</option>
+          <option value="hue-rotate">Rainbow</option>
+          <option value="saturate">Vibrant</option>
+          <option value="opacity">Ghost</option>
+          <option value="pinkish">Pink Glow</option>
+          <option value="snap-lens">Snapchat Filter (AR)</option>
+        </select>
+      </label>
+      <label>🌸 Ambience:
+        <select id="ambience" onchange="updateAmbience()">
+          <option value="none">None</option>
+          <option value="soft">Soft Light</option>
+          <option value="warm">Warm Glow</option>
+          <option value="cool">Cool Mist</option>
+          <option value="dreamy">Dreamy Blur</option>
+          <option value="sparkle">Sparkles</option>
+          <option value="hearts">Hearts Overlay</option>
+          <option value="stars">Star Field</option>
+          <option value="retro">Retro Fade</option>
+          <option value="foggy">Foggy Lens</option>
+        </select>
+      </label>
+    </div>
+  
+    <div class="strip" id="strip"></div>
+    <canvas id="canvas" width="320" height="240"></canvas>
+  
+    <script>
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const strip = document.getElementById('strip');
+      const cameraSelect = document.getElementById('cameraSelect');
+      const frameSelect = document.getElementById('frameSelect');
+      const faceFilter = document.getElementById('faceFilter');
+      const ambience = document.getElementById('ambience');
+      const timerInput = document.getElementById('timerInput');
+      const countInput = document.getElementById('countInput');
+      const countdown = document.getElementById('countdown');
+      const flash = document.getElementById('flash');
+  
+      let stream;
+      let images = [];
+  
+      async function startCamera(deviceId) {
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        const constraints = {
+          video: deviceId ? { deviceId: { exact: deviceId } } : true
+        };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+      }
+  
+      async function init() {
+        await startCamera();
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        cameraSelect.innerHTML = '';
+        videoDevices.forEach((device, index) => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.text = device.label || `Camera ${index + 1}`;
+          cameraSelect.appendChild(option);
+        });
+      }
+  
+      cameraSelect.addEventListener('change', e => {
+        startCamera(e.target.value);
+      });
+  
+      function updateFilterPreview() {
+        const filter = faceFilter.value;
+        if (filter === 'snap-lens') {
+          video.style.filter = 'none';
+          alert('Snapchat-style filters require AR functionality and are not implemented yet.');
+        } else {
+          video.style.filter = getFilterStyle(filter);
+        }
+      }
+  
+      function getFilterStyle(filter) {
+        switch (filter) {
+          case 'grayscale': return 'grayscale(100%)';
+          case 'sepia': return 'sepia(100%)';
+          case 'invert': return 'invert(100%)';
+          case 'blur': return 'blur(2px)';
+          case 'brightness': return 'brightness(1.5)';
+          case 'contrast': return 'contrast(200%)';
+          case 'hue-rotate': return 'hue-rotate(90deg)';
+          case 'saturate': return 'saturate(200%)';
+          case 'opacity': return 'opacity(50%)';
+          case 'pinkish': return 'drop-shadow(0 0 10px pink)';
+          default: return 'none';
+        }
+      }
+  
+      function updateAmbience() {
+        // Placeholder: Add overlay or filter logic if desired
+        console.log(`Ambience changed to: ${ambience.value}`);
+      }
+  
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+  
+      async function startPhotoSession() {
+        images = [];
+        strip.innerHTML = '';
+        const count = parseInt(countInput.value);
+        const delay = parseInt(timerInput.value);
+  
+        for (let i = 0; i < count; i++) {
+          if (delay > 0) {
+            for (let sec = delay; sec > 0; sec--) {
+              countdown.textContent = sec;
+              await sleep(1000);
+            }
+            countdown.textContent = '';
+          }
+          flash.style.opacity = 1;
+          await sleep(200);
+          flash.style.opacity = 0;
+          takePhoto();
+          await sleep(500);
+        }
+  
+        const footer = document.createElement('div');
+        footer.className = 'footer';
+        footer.innerText = new Date().toLocaleString();
+        strip.appendChild(footer);
+      }
+  
+      function applyFilter(ctx) {
+        ctx.filter = getFilterStyle(faceFilter.value);
+      }
+  
+      function takePhoto() {
+        applyFilter(ctx);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/png');
+        const img = document.createElement('img');
+        img.src = imageData;
+        img.style.border = `5px solid ${frameSelect.value === '2' ? '#ffffff' : '#ffcce6'}`;
+        strip.appendChild(img);
+        images.push(imageData);
+      }
+  
+      function downloadStrip() {
+        if (images.length === 0) {
+          alert("Take some photos first!");
+          return;
+        }
+  
+        const spacing = 10;
+        const imgWidth = 320;
+        const imgHeight = 240;
+        const totalHeight = images.length * (imgHeight + spacing);
+  
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = imgWidth;
+        finalCanvas.height = totalHeight + 40;
+  
+        const finalCtx = finalCanvas.getContext('2d');
+        finalCtx.fillStyle = '#fff0f8';
+        finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+  
+        images.forEach((src, i) => {
+          const img = new Image();
+          img.src = src;
+          img.onload = () => {
+            finalCtx.drawImage(img, 0, i * (imgHeight + spacing), imgWidth, imgHeight);
+          };
+        });
+  
+        setTimeout(() => {
+          finalCtx.fillStyle = '#999';
+          finalCtx.font = '16px cursive';
+          finalCtx.fillText(new Date().toLocaleString(), 10, totalHeight + 30);
+          const link = document.createElement('a');
+          link.href = finalCanvas.toDataURL('image/png');
+          link.download = 'photobooth-strip.png';
+          link.click();
+        }, 1000);
+      }
+  
+      init();
+    </script>
+  </body>
+</html>
